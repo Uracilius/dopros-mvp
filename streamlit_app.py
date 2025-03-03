@@ -24,14 +24,6 @@ def create_directories():
         st.error(f"Ошибка при создании директорий: {str(e)}")
         raise
 
-# Анализ видео и распознавание лиц
-def analyze_video(video_path):
-    try:
-        face_analysis_pipeline = FaceAnalysisPipeline("yolov5s.pt", video_path)
-        face_analysis_pipeline.run_analysis()
-    except Exception as e:
-        return f"Ошибка при анализе видео: {str(e)}"
-
 # Анализ CSV данных
 def analyze_csv(csv_path):
     try:
@@ -39,13 +31,13 @@ def analyze_csv(csv_path):
         expression_counts = df["Expression"].value_counts()
         avg_confidence = df.groupby("Expression")["Confidence"].mean()
         
-        summary = """
+        summary = f"""
         📊 **Статистика по выражениям лиц**:
         - Количество выражений:
-        {expression_counts}
+        {expression_counts.to_string()}
         - Средняя уверенность:
-        {avg_confidence}
-        """.format(expression_counts=expression_counts.to_string(), avg_confidence=avg_confidence.to_string())
+        {avg_confidence.to_string()}
+        """
         
         return df, summary
     except Exception as e:
@@ -78,6 +70,23 @@ def get_openai_insights(df):
     except Exception as e:
         return f"Ошибка при запросе к OpenAI API: {str(e)}"
 
+# Запуск анализа
+def run_face_analysis(video_path):
+    try:
+        st.info("🔍 Запуск анализа видео...")
+        model_path = "./yolov8n-face.pt"
+        pipeline = FaceAnalysisPipeline(model_path, video_path)
+        pipeline.run_analysis()
+        
+        csv_path = f"storage/results/{Path(video_path).stem}.csv"
+        if os.path.exists(csv_path):
+            return csv_path
+        else:
+            return None
+    except Exception as e:
+        st.error(f"Ошибка при запуске анализа: {str(e)}")
+        return None
+
 # Основной контент
 st.header("🎥 Анализ лиц в видео")
 
@@ -98,10 +107,9 @@ if uploaded_file is not None:
     
     if st.button("Запустить анализ лиц"):
         with st.spinner("Обработка видео..."):
-            analyze_video(video_path)
-            csv_path = f"storage/results/{uploaded_file.name.replace('.mp4', '.csv')}"
+            csv_path = run_face_analysis(video_path)
             
-            if os.path.exists(csv_path):
+            if csv_path:
                 df, summary = analyze_csv(csv_path)
                 if df is not None:
                     st.subheader("📊 Анализ данных")
