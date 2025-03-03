@@ -4,7 +4,7 @@ import pandas as pd
 from deepface import DeepFace
 
 class EmotionExtractor:
-    def __init__(self, faces_dir="faces", csv_output="faces_data.csv"):
+    def __init__(self, faces_dir="faces", csv_output="input_video.csv"):
         self.faces_dir = faces_dir
         self.csv_output = csv_output
         self.data = []
