@@ -7,7 +7,6 @@ langchain-core
 faiss-cpu
 PyPDF2
 ultralytics
-opencv-python
 pandas
 deepface
 opencv-python-headless
