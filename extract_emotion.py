@@ -2,10 +2,9 @@ import cv2
 import os
 import pandas as pd
 from deepface import DeepFace
-from tensorflow.keras.models import load_model
 
 class EmotionExtractor:
-    def __init__(self, faces_dir="faces", csv_output=f"storage/results/input_video.csv"):
+    def __init__(self, faces_dir="faces", csv_output="storage/results/input_video.csv"):
         self.faces_dir = faces_dir
         self.csv_output = csv_output
         self.data = []
@@ -23,15 +22,9 @@ class EmotionExtractor:
             timestamp = float(face_file.split("_")[1].replace(".jpg", ""))
 
             try:
-                analysis = DeepFace.analyze(
-                    face_path,
-                    actions=['emotion'],
-                    enforce_detection=False,
-                    models={'emotion': self.emotion_model}
-                )
-                # Use the returned dictionary directly
-                expression = analysis['dominant_emotion']
-                confidence = analysis['emotion'][expression]
+                analysis = DeepFace.analyze(face_path, actions=['emotion'], enforce_detection=False)
+                expression = analysis[0]['dominant_emotion']
+                confidence = analysis[0]['emotion'][expression]
             except Exception as e:
                 print(f"Error analyzing {face_file}: {e}")
                 expression = "unknown"
