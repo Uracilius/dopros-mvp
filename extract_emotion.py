@@ -1,15 +1,14 @@
+from deepface import DeepFace
 import os
 import pandas as pd
-from deepface import DeepFace
-from deepface.extendedmodels import Emotion as emotionmodel
 
 class EmotionExtractor:
-    def __init__(self, faces_dir="faces", csv_output=r"storage\results\input_video.csv"):
+    def __init__(self, faces_dir="faces", csv_output="storage/results/input_video.csv"):
         self.faces_dir = faces_dir
         self.csv_output = csv_output
         self.data = []
-        # Use DeepFace's built-in emotion model
-        self.emotion_model = emotionmodel.loadModel()
+        # Use DeepFace’s internal build_model function
+        self.emotion_model = DeepFace.build_model("Emotion")
 
     def extract_emotions(self):
         if not os.path.exists(self.faces_dir):
@@ -50,7 +49,7 @@ class EmotionExtractor:
         columns = ["Filename", "Timestamp (s)", "Expression", "Confidence"]
         df = pd.DataFrame(self.data, columns=columns)
         df.to_csv(self.csv_output, index=False)
-        print(f"CSV saved: {self.csv_output}")
+        print(f"CSV saved to {self.csv_output}")
 
 if __name__ == "__main__":
     extractor = EmotionExtractor()
