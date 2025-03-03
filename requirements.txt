@@ -11,3 +11,4 @@ pandas
 deepface
 opencv-python-headless
 omegaconf
+tf-keras
