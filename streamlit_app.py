@@ -7,6 +7,7 @@ from pathlib import Path
 from face_analysis_main import FaceAnalysisPipeline
 import openai
 
+st.set_option('server.runOnSave', False)
 # Настройка страницы
 st.set_page_config(
     page_title="Анализ лиц в видео",
