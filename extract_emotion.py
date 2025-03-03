@@ -1,14 +1,14 @@
-from deepface import DeepFace
+import cv2
 import os
 import pandas as pd
+from deepface import DeepFace
+from tensorflow.keras.models import load_model
 
 class EmotionExtractor:
-    def __init__(self, faces_dir="faces", csv_output="storage/results/input_video.csv"):
+    def __init__(self, faces_dir="faces", csv_output=f"storage/results/input_video.csv"):
         self.faces_dir = faces_dir
         self.csv_output = csv_output
         self.data = []
-        # Use DeepFace’s internal build_model function
-        self.emotion_model = DeepFace.build_model("Emotion")
 
     def extract_emotions(self):
         if not os.path.exists(self.faces_dir):
@@ -20,22 +20,16 @@ class EmotionExtractor:
                 continue
 
             face_path = os.path.join(self.faces_dir, face_file)
-
-            # Safely parse the timestamp
-            try:
-                timestamp = float(face_file.split("_")[1].replace(".jpg", ""))
-            except Exception as e:
-                print(f"Could not parse timestamp for {face_file}: {e}")
-                timestamp = 0.0
+            timestamp = float(face_file.split("_")[1].replace(".jpg", ""))
 
             try:
                 analysis = DeepFace.analyze(
-                    img_path=face_path,
+                    face_path,
                     actions=['emotion'],
                     enforce_detection=False,
-                    detector_backend='skip',
                     models={'emotion': self.emotion_model}
                 )
+                # Use the returned dictionary directly
                 expression = analysis['dominant_emotion']
                 confidence = analysis['emotion'][expression]
             except Exception as e:
@@ -49,7 +43,7 @@ class EmotionExtractor:
         columns = ["Filename", "Timestamp (s)", "Expression", "Confidence"]
         df = pd.DataFrame(self.data, columns=columns)
         df.to_csv(self.csv_output, index=False)
-        print(f"CSV saved to {self.csv_output}")
+        print(f"CSV saved: {self.csv_output}")
 
 if __name__ == "__main__":
     extractor = EmotionExtractor()
