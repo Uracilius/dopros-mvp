@@ -5,7 +5,7 @@ from deepface import DeepFace
 from tensorflow.keras.models import load_model
 
 class EmotionExtractor:
-    def __init__(self, faces_dir="faces", csv_output="input_video.csv"):
+    def __init__(self, faces_dir="faces", csv_output=r"storage\results\input_video.csv"):
         self.faces_dir = faces_dir
         self.csv_output = csv_output
         self.data = []
