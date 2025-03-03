@@ -12,3 +12,4 @@ pandas
 deepface
 opencv-python-headless
 omegaconf
+tornado==5.0
