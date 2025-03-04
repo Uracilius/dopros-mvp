@@ -142,8 +142,6 @@ def get_openai_insights(df):
         СЕРИЯ ВЫСОКОЧАСТОТНЫХ ЭМОЦИОНАЛЬНЫХ ФЛУКТУАЦИЙ:
         ДОПОЛНИТЕЛЬНЫЕ ЭПИЗОДЫ С ВЫСОКИМ УРОВНЕМ ДОСТОВЕРНОСТИ:
         ЭКСПЕРТНОЕ ЗАКЛЮЧЕНИЕ:
-
-        можешь использовать дополнительное форматирование для жирного шрифта.
         """
 
         response = openai.chat.completions.create(
@@ -173,7 +171,7 @@ def extract_audio(video_path, audio_path):
         raise RuntimeError(f"Не удалось извлечь аудио: {str(e)}")
 
 # ========== Транскрипция аудио с помощью Whisper (GPU, если доступно) ==========
-def transcribe_audio(audio_path, whisper_model="small"):
+def transcribe_audio(audio_path, whisper_model="turbo"):
     """
     Транскрибирует аудио при помощи OpenAI Whisper.
     Использует CUDA, если доступно.
