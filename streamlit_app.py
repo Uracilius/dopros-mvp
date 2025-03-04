@@ -170,19 +170,37 @@ def extract_audio(video_path, audio_path):
     except Exception as e:
         raise RuntimeError(f"Не удалось извлечь аудио: {str(e)}")
 
-# ========== Транскрипция аудио с помощью Whisper (GPU, если доступно) ==========
-def transcribe_audio(audio_path, whisper_model="turbo"):
+# # ========== Транскрипция аудио с помощью Whisper (GPU, если доступно) ==========
+# def transcribe_audio(audio_path, whisper_model="turbo"):
+#     """
+#     Транскрибирует аудио при помощи OpenAI Whisper.
+#     Использует CUDA, если доступно.
+#     """
+#     try:
+#         device = "cuda" if torch.cuda.is_available() else "cpu"
+#         model = whisper.load_model(whisper_model, device=device)
+#         result = model.transcribe(audio_path, fp16=False, language="ru")
+#         return result["text"]
+#     except Exception as e:
+#         raise RuntimeError(f"Ошибка при транскрипции Whisper: {str(e)}")
+
+def transcribe_audio(audio_path: str, whisper_model="turbo") -> str:
     """
-    Транскрибирует аудио при помощи OpenAI Whisper.
-    Использует CUDA, если доступно.
+    Транскрибирует аудио при помощи OpenAI Whisper API.
+    Требуется валидный API-ключ OpenAI (например, через переменную окружения OPENAI_API_KEY).
     """
     try:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        model = whisper.load_model(whisper_model, device=device)
-        result = model.transcribe(audio_path, fp16=False, language="ru")
-        return result["text"]
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        with open(audio_path, "rb") as f:
+            transcript = openai.audio.transcriptions.create(
+                model="whisper-1",
+                file=f,
+                language="ru"
+            )
+        return transcript["text"]
     except Exception as e:
-        raise RuntimeError(f"Ошибка при транскрипции Whisper: {str(e)}")
+        raise RuntimeError(f"Ошибка при использовании OpenAI Whisper API: {str(e)}")
+
 
 # ========== Улучшить/очистить транскрипт с помощью ChatGPT ==========
 def enhance_transcript(raw_transcript):
