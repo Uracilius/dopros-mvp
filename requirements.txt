@@ -12,3 +12,6 @@ deepface
 opencv-python-headless
 omegaconf
 tf-keras
+openai
+whisper
+torch
