@@ -197,7 +197,7 @@ def transcribe_audio(audio_path: str, whisper_model="turbo") -> str:
                 file=f,
                 language="ru"
             )
-        return transcript["text"]
+        return transcript.text
     except Exception as e:
         raise RuntimeError(f"Ошибка при использовании OpenAI Whisper API: {str(e)}")
 
