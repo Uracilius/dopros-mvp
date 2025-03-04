@@ -13,5 +13,5 @@ opencv-python-headless
 omegaconf
 tf-keras
 openai
-whisper
+openai-whisper
 torch
