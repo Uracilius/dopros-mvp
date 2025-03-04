@@ -5,6 +5,10 @@ from deepface import DeepFace
 
 class EmotionExtractor:
     def __init__(self, faces_dir="faces", csv_output="storage/results/input_video.csv"):
+        """
+        If no csv_output is passed, it defaults to 'input_video.csv' but
+        we usually override it by passing in a custom path.
+        """
         self.faces_dir = faces_dir
         self.csv_output = csv_output
         self.data = []
@@ -19,7 +23,16 @@ class EmotionExtractor:
                 continue
 
             face_path = os.path.join(self.faces_dir, face_file)
-            timestamp = float(face_file.split("_")[1].replace(".jpg", ""))
+            
+            # Attempt to parse the timestamp if your naming scheme includes it
+            # e.g. "frame_5.jpg"
+            try:
+                # If your face file name is like "frame_5.jpg", parse '5' as a float
+                # Adjust this parse logic if your naming differs
+                timestamp_str = face_file.split("_")[1].replace(".jpg", "")
+                timestamp = float(timestamp_str)
+            except:
+                timestamp = 0.0
 
             try:
                 analysis = DeepFace.analyze(face_path, actions=['emotion'], enforce_detection=False)
@@ -37,8 +50,3 @@ class EmotionExtractor:
         df = pd.DataFrame(self.data, columns=columns)
         df.to_csv(self.csv_output, index=False)
         print(f"CSV saved: {self.csv_output}")
-
-if __name__ == "__main__":
-    extractor = EmotionExtractor()
-    extractor.extract_emotions()
-    extractor.save_to_csv()

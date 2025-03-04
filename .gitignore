@@ -179,3 +179,7 @@ input_video.mp4
 faces/
 
 yolo-face/
+
+videos/
+audio/
+results/
