@@ -292,6 +292,26 @@ def main():
     st.title("Demo File vs Uploaded File")
 
     # Button to select the demo file
+    st.markdown(
+        """
+        <style>
+        div.stButton > button:first-child {
+            background-color: red !important;
+            color: white !important;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+        }
+        div.stButton > button:first-child:hover {
+            background-color: darkred !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     if st.button("Использовать демо-файл видеозаписи допроса"):
         st.session_state["demo_file_used"] = True
         st.session_state["demo_video_path"] = "input_video.mp4"
