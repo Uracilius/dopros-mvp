@@ -13,7 +13,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # ========== Streamlit Page Config ==========
 st.set_page_config(
-    page_title="Анализ лиц в видео",
+    page_title="ОТЧЕТ О ЭМОЦИОНАЛЬНОМ СОСТОЯНИИ ДОПРАШИВАЕМОГО С РАСШИФРОВКОЙ ПОКАЗАНИЙ",
     page_icon="🎥",
     layout="wide",
     initial_sidebar_state="expanded"

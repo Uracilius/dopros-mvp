@@ -173,7 +173,6 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-input_video.mp4
 
 
 faces/
