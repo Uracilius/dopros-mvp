@@ -269,7 +269,7 @@ def run_face_analysis(video_path):
         pipeline = FaceAnalysisPipeline(model_path="./yolov8n-face.pt", video_path=video_path)
         pipeline.run_analysis()
 
-        from pathlib import Path
+        
         csv_path = pipeline.get_csv_output_path()
         if os.path.exists(csv_path):
             return csv_path
@@ -333,7 +333,6 @@ def main():
             csv_path = run_face_analysis(video_path)
             
             if csv_path:
-                from pathlib import Path
                 hash_value = Path(csv_path).stem
 
                 st.success("Файл сохранён под конфиденциальным хэшем:")
