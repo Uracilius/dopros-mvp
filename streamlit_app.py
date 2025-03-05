@@ -281,6 +281,7 @@ def run_face_analysis(video_path):
 
 # ========== Основная часть Streamlit-приложения ==========
 def main():
+    create_directories()
     if "demo_file_used" not in st.session_state:
         st.session_state["demo_file_used"] = False
     if "demo_video_path" not in st.session_state:
