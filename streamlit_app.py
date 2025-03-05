@@ -281,49 +281,54 @@ def run_face_analysis(video_path):
 
 # ========== Основная часть Streamlit-приложения ==========
 def main():
-    # Верхний заголовок с небольшим оформлением
-    st.markdown("<h1 style='text-align: center; color: #4b6584;'> ОТЧЕТ О ЭМОЦИОНАЛЬНОМ СОСТОЯНИИ ДОПРАШИВАЕМОГО С РАСШИФРОВКОЙ ПОКАЗАНИЙ </h1>", unsafe_allow_html=True)
-    st.markdown("---")
+    # Initialize any needed session state variables if they don't already exist
+    if "demo_file_used" not in st.session_state:
+        st.session_state["demo_file_used"] = False
+    if "demo_video_path" not in st.session_state:
+        st.session_state["demo_video_path"] = None
+    if "uploaded_video_path" not in st.session_state:
+        st.session_state["uploaded_video_path"] = None
 
-    # Кнопка для использования демо-файла
-    demo_file_used = False
+    st.title("Demo File vs Uploaded File")
+
+    # Button to select the demo file
     if st.button("Использовать демо-файл видеозаписи допроса"):
-        demo_file_used = True
-        demo_video_path = "input_video.mp4"  # Предполагаем, что этот файл лежит рядом с streamlit_app.py
-
-    uploaded_file = None
-    if not demo_file_used:
-        # 1) Выбираем видео через загрузчик
-        uploaded_file = st.file_uploader(
-            "Выберите видеоматериал допроса (MP4)",
-            type=["mp4"],
-            help="Перетащите файл для анализа. Лимит 200МБ на файл."
-        )
-
-    # Создаём нужные директории
-    create_directories()
-
-    # Если выбран демо-файл
-    if demo_file_used:
-        video_path = f"storage/videos/{Path(demo_video_path).name}"
-        # Копируем демо-видео в нужную папку, если ещё не скопировали
-        if not os.path.exists(video_path):
-            with open(demo_video_path, "rb") as src_file:
-                data = src_file.read()
-            with open(video_path, "wb") as dst_file:
-                dst_file.write(data)
+        st.session_state["demo_file_used"] = True
+        st.session_state["demo_video_path"] = "input_video.mp4"
+        st.session_state["uploaded_video_path"] = None
         st.success("Демо-видео готово к анализу!")
-    elif uploaded_file is not None:
-        # Сохраняем загруженное видео
-        video_path = f"storage/videos/{uploaded_file.name}"
-        with open(video_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        st.success("Видео успешно загружено!")
-    else:
-        video_path = None
+    
+    # File uploader in case user does not want the demo
+    uploaded_file = st.file_uploader("Загрузить видео для анализа", type=["mp4"])
+    if uploaded_file is not None:
+        # If user manually uploads, we flip off demo mode
+        st.session_state["demo_file_used"] = False
+        st.session_state["demo_video_path"] = None
 
-    # 2) Запуск анализа лиц и транскрипция
+        # Save the uploaded file to disk, store that path in session
+        video_save_path = Path("storage/videos") / uploaded_file.name
+        with open(video_save_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        st.session_state["uploaded_video_path"] = str(video_save_path)
+        st.success("Видео успешно загружено!")
+    
+    # Figure out which video path we should use 
+    # (demo vs uploaded), if any
+    video_path = None
+    if st.session_state["demo_file_used"] and st.session_state["demo_video_path"]:
+        video_path = str(Path("storage/videos") / Path(st.session_state["demo_video_path"]).name)
+        # Copy your demo file to storage/videos if needed...
+        if not os.path.exists(video_path):
+            with open(st.session_state["demo_video_path"], "rb") as src:
+                data = src.read()
+            with open(video_path, "wb") as dst:
+                dst.write(data)
+    elif st.session_state["uploaded_video_path"]:
+        video_path = st.session_state["uploaded_video_path"]
+
+    # Main analysis button
     if video_path is not None and st.button("ЗАПУСТИТЬ КОМПЛЕКСНЫЙ АНАЛИЗ ВЕРБАЛЬНЫХ И НЕВЕРБАЛЬНЫХ РЕАКЦИЙ"):
+        st.write(f"Запускаем анализ файла: {video_path}")
         # Создадим прогресс-бар для иллюзии поэтапной обработки
         progress_bar = st.progress(0)
 
