@@ -356,7 +356,7 @@ def main():
     # (demo vs uploaded), if any
     video_path = None
     if st.session_state["demo_file_used"] and st.session_state["demo_video_path"]:
-        video_path = str(Path("storage/videos") / Path(st.session_state["demo_video_path"]).name)
+        video_path = str(Path("") / Path(st.session_state["demo_video_path"]).name)
         # Copy your demo file to storage/videos if needed...
         if not os.path.exists(video_path):
             with open(st.session_state["demo_video_path"], "rb") as src:
