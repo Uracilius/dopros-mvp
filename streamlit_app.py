@@ -297,15 +297,14 @@ def main():
         st.session_state["demo_video_path"] = "input_video.mp4"
         st.session_state["uploaded_video_path"] = None
         st.success("Демо-видео готово к анализу!")
-    
-    
+
+    # Always define `uploaded_file` first:
+    uploaded_file = None
+    if not st.session_state["demo_file_used"]:
+        uploaded_file = st.file_uploader("Upload your video file", type=["mp4"])
 
     if uploaded_file is not None:
-
-        if not st.session_state["demo_file_used"]:
-            uploaded_file = st.file_uploader("Upload your video file", type=["mp4"])
-
-        # If user manually uploads, we flip off demo mode
+        # If user manually uploads, turn off demo mode
         st.session_state["demo_file_used"] = False
         st.session_state["demo_video_path"] = None
 
