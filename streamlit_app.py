@@ -7,13 +7,12 @@ from pathlib import Path
 import torch  # For GPU detection
 import openai
 import subprocess
-import whisper
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 # ========== Streamlit Page Config ==========
 st.set_page_config(
-    page_title="ОТЧЕТ О ЭМОЦИОНАЛЬНОМ СОСТОЯНИИ ДОПРАШИВАЕМОГО С РАСШИФРОВКОЙ ПОКАЗАНИЙ",
+    page_title="Анализ лиц в видео",
     page_icon="🎥",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -170,20 +169,6 @@ def extract_audio(video_path, audio_path):
     except Exception as e:
         raise RuntimeError(f"Не удалось извлечь аудио: {str(e)}")
 
-# # ========== Транскрипция аудио с помощью Whisper (GPU, если доступно) ==========
-# def transcribe_audio(audio_path, whisper_model="turbo"):
-#     """
-#     Транскрибирует аудио при помощи OpenAI Whisper.
-#     Использует CUDA, если доступно.
-#     """
-#     try:
-#         device = "cuda" if torch.cuda.is_available() else "cpu"
-#         model = whisper.load_model(whisper_model, device=device)
-#         result = model.transcribe(audio_path, fp16=False, language="ru")
-#         return result["text"]
-#     except Exception as e:
-#         raise RuntimeError(f"Ошибка при транскрипции Whisper: {str(e)}")
-
 def transcribe_audio(audio_path: str, whisper_model="turbo") -> str:
     """
     Транскрибирует аудио при помощи OpenAI Whisper API.
@@ -201,7 +186,6 @@ def transcribe_audio(audio_path: str, whisper_model="turbo") -> str:
     except Exception as e:
         raise RuntimeError(f"Ошибка при использовании OpenAI Whisper API: {str(e)}")
 
-
 # ========== Улучшить/очистить транскрипт с помощью ChatGPT ==========
 def enhance_transcript(raw_transcript):
     """
@@ -209,7 +193,6 @@ def enhance_transcript(raw_transcript):
     чтобы немного улучшить/очистить текст (исправить орфографию/пунктуацию и т.д.).
     """
     try:
-        # Вставьте свой реальный ключ
         api_key = st.secrets["openai_api_key"]
         if not api_key:
             return "Ошибка: API ключ отсутствует"
@@ -242,7 +225,6 @@ def summarize_transcript(enhanced_transcript):
     резюмируй.
     """
     try:
-        # Вставьте свой реальный ключ
         api_key = st.secrets["openai_api_key"]
         if not api_key:
             return "Ошибка: API ключ отсутствует"
@@ -303,114 +285,128 @@ def main():
     st.markdown("<h1 style='text-align: center; color: #4b6584;'> ОТЧЕТ О ЭМОЦИОНАЛЬНОМ СОСТОЯНИИ ДОПРАШИВАЕМОГО С РАСШИФРОВКОЙ ПОКАЗАНИЙ </h1>", unsafe_allow_html=True)
     st.markdown("---")
 
-    # 1) Выбираем видео
-    uploaded_file = st.file_uploader(
-        "Выберите видеоматериал допроса (MP4)",
-        type=["mp4"],
-        help="Перетащите файл для анализа. Лимит 200МБ на файл."
-    )
+    # Кнопка для использования демо-файла
+    demo_file_used = False
+    if st.button("Использовать демо-файл видеозаписи допроса"):
+        demo_file_used = True
+        demo_video_path = "input_video.mp4"  # Предполагаем, что этот файл лежит рядом с streamlit_app.py
 
-    if uploaded_file is not None:
-        # Создаём нужные директории
-        create_directories()
+    uploaded_file = None
+    if not demo_file_used:
+        # 1) Выбираем видео через загрузчик
+        uploaded_file = st.file_uploader(
+            "Выберите видеоматериал допроса (MP4)",
+            type=["mp4"],
+            help="Перетащите файл для анализа. Лимит 200МБ на файл."
+        )
+
+    # Создаём нужные директории
+    create_directories()
+
+    # Если выбран демо-файл
+    if demo_file_used:
+        video_path = f"storage/videos/{Path(demo_video_path).name}"
+        # Копируем демо-видео в нужную папку, если ещё не скопировали
+        if not os.path.exists(video_path):
+            with open(demo_video_path, "rb") as src_file:
+                data = src_file.read()
+            with open(video_path, "wb") as dst_file:
+                dst_file.write(data)
+        st.success("Демо-видео готово к анализу!")
+    elif uploaded_file is not None:
+        # Сохраняем загруженное видео
         video_path = f"storage/videos/{uploaded_file.name}"
-
-        # Сохраняем видео в папку
         with open(video_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
         st.success("Видео успешно загружено!")
+    else:
+        video_path = None
 
-        # 2) Запуск анализа лиц и транскрипция
-        if st.button("ЗАПУСТИТЬ КОМПЛЕКСНЫЙ АНАЛИЗ ВЕРБАЛЬНЫХ И НЕВЕРБАЛЬНЫХ РЕАКЦИЙ"):
-            # Создадим прогресс-бар для иллюзии поэтапной обработки
-            progress_bar = st.progress(0)
+    # 2) Запуск анализа лиц и транскрипция
+    if video_path is not None and st.button("ЗАПУСТИТЬ КОМПЛЕКСНЫЙ АНАЛИЗ ВЕРБАЛЬНЫХ И НЕВЕРБАЛЬНЫХ РЕАКЦИЙ"):
+        # Создадим прогресс-бар для иллюзии поэтапной обработки
+        progress_bar = st.progress(0)
 
-            with st.spinner("Обработка видео..."):
-                # ========== Шаг A: Анализ лиц ==========
-                progress_bar.progress(10)
-                csv_path = run_face_analysis(video_path)
-                
+        with st.spinner("Обработка видео..."):
+            # ========== Шаг A: Анализ лиц ==========
+            progress_bar.progress(10)
+            csv_path = run_face_analysis(video_path)
+            
+            if csv_path:
+                from pathlib import Path
                 hash_value = Path(csv_path).stem
 
-                st.success(f"Файл сохранён под конфиденциальным хэшем:")
+                st.success("Файл сохранён под конфиденциальным хэшем:")
                 st.code(hash_value, language="text")
 
-                
-                if csv_path:
-                    progress_bar.progress(40)
-                    df, summary = analyze_csv(csv_path)
+                progress_bar.progress(40)
+                df, summary = analyze_csv(csv_path)
 
-                    # ========== Шаг B: Аналитические инсайты (Completions) ==========
-                    st.subheader("🧠 АНАЛИЗ ЭМОЦИОНАЛЬНОГО СОСТОЯНИЯ")
-                    insights = get_openai_insights(df)
-                    st.write(insights)
-                    st.download_button(
-                        label="💾 ЭКСПОРТ АНАЛИТИЧЕСКИХ ДАННЫХ В CSV",
-                        data=df.to_csv(index=False),
-                        file_name=f"{uploaded_file.name.replace('.mp4', '.csv')}",
-                        mime="text/csv"
-                    )
-                else:
-                    st.error("CSV файл с результатами анализа не найден.")
-                    progress_bar.progress(40)
+                # ========== Шаг B: Аналитические инсайты (Completions) ==========
+                st.subheader("🧠 АНАЛИЗ ЭМОЦИОНАЛЬНОГО СОСТОЯНИЯ")
+                insights = get_openai_insights(df)
+                st.write(insights)
+                st.download_button(
+                    label="💾 ЭКСПОРТ АНАЛИТИЧЕСКИХ ДАННЫХ В CSV",
+                    data=df.to_csv(index=False),
+                    file_name=f"{Path(video_path).stem}.csv",
+                    mime="text/csv"
+                )
+            else:
+                st.error("CSV файл с результатами анализа не найден.")
+                progress_bar.progress(40)
 
-                # ========== Шаг C: Извлечение и транскрипция аудио ==========
-                try:
-                    progress_bar.progress(60)
-                    st.subheader("СТЕНОГРАММА ВЕРБАЛЬНЫХ ПОКАЗАНИЙ")
-                    audio_path = f"storage/audio/{Path(video_path).stem}.wav"
+            # ========== Шаг C: Извлечение и транскрипция аудио ==========
+            try:
+                progress_bar.progress(60)
+                st.subheader("СТЕНОГРАММА ВЕРБАЛЬНЫХ ПОКАЗАНИЙ")
+                audio_path = f"storage/audio/{Path(video_path).stem}.wav"
 
-                    st.info("Извлечение аудиодорожки...")
-                    extract_audio(video_path, audio_path)
-                    progress_bar.progress(70)
+                st.info("Извлечение аудиодорожки...")
+                extract_audio(video_path, audio_path)
+                progress_bar.progress(70)
 
-                    st.info("Запуск расширенной речевой аналитики")
-                    transcript_text = transcribe_audio(audio_path, whisper_model="small")
-                    st.success("Транскрипция успешно завершена!")
-                    # st.write("**Сырой транскрипт:**")
-                    # st.write(transcript_text)
-                    progress_bar.progress(85)
+                st.info("Запуск расширенной речевой аналитики")
+                transcript_text = transcribe_audio(audio_path, whisper_model="small")
+                st.success("Транскрипция успешно завершена!")
+                progress_bar.progress(85)
 
-                    # ========== Шаг D: Прогон через ChatGPT для улучшения ==========
-                    st.info("Форматирование транскрипции...")
-                    enhanced_text = enhance_transcript(transcript_text)
-                    st.write("**ВЕРИФИЦИРОВАННАЯ СТЕНОГРАММА:**")
-                    st.write(enhanced_text)
-                    progress_bar.progress(100)
+                # ========== Шаг D: Прогон через ChatGPT для улучшения ==========
+                st.info("Форматирование транскрипции...")
+                enhanced_text = enhance_transcript(transcript_text)
+                st.write("**ВЕРИФИЦИРОВАННАЯ СТЕНОГРАММА:**")
+                st.write(enhanced_text)
+                progress_bar.progress(100)
 
-                    # ========== Сформировать краткое резюме (summary) транскрипта ==========
-                    st.info("Формирование аналитического резюме показаний...")
-                    summary_text = summarize_transcript(enhanced_text)
-                    st.subheader("**АНАЛИТИЧЕСКОЕ РЕЗЮМЕ ПОКАЗАНИЙ**")
-                    st.write(summary_text)
+                # ========== Сформировать краткое резюме (summary) транскрипта ==========
+                st.info("Формирование аналитического резюме показаний...")
+                summary_text = summarize_transcript(enhanced_text)
+                st.subheader("**АНАЛИТИЧЕСКОЕ РЕЗЮМЕ ПОКАЗАНИЙ**")
+                st.write(summary_text)
 
-                    st.download_button(
-                        label="ЭКСПОРТ НЕОБРАБОТАННОЙ СТЕНОГРАММЫ (TXT)",
-                        data=transcript_text,
-                        file_name="raw_transcript.txt",
-                        mime="text/plain"
-                    )
+                st.download_button(
+                    label="ЭКСПОРТ НЕОБРАБОТАННОЙ СТЕНОГРАММЫ (TXT)",
+                    data=transcript_text,
+                    file_name="raw_transcript.txt",
+                    mime="text/plain"
+                )
 
-                    # Button to download enhanced transcript as a text file
-                    st.download_button(
-                        label="ЭКСПОРТ ВЕРИФИЦИРОВАННОЙ СТЕНОГРАММЫ(TXT)",
-                        data=enhanced_text,
-                        file_name="enhanced_transcript.txt",
-                        mime="text/plain"
-                    )
+                st.download_button(
+                    label="ЭКСПОРТ ВЕРИФИЦИРОВАННОЙ СТЕНОГРАММЫ (TXT)",
+                    data=enhanced_text,
+                    file_name="enhanced_transcript.txt",
+                    mime="text/plain"
+                )
 
-                    
-                    # Кнопка для скачивания итогового резюме
-                    st.download_button(
-                        label="ЭКСПОРТ АНАЛИТИЧЕСКОГО РЕЗЮМЕ (TXT)",
-                        data=summary_text,
-                        file_name="summary.txt",
-                        mime="text/plain"
-                    )
+                st.download_button(
+                    label="ЭКСПОРТ АНАЛИТИЧЕСКОГО РЕЗЮМЕ (TXT)",
+                    data=summary_text,
+                    file_name="summary.txt",
+                    mime="text/plain"
+                )
 
-
-                except Exception as e:
-                    st.error(f"Ошибка при транскрипции аудио: {str(e)}")
+            except Exception as e:
+                st.error(f"Ошибка при транскрипции аудио: {str(e)}")
 
     # Нижний колонтитул
     st.markdown("---")
