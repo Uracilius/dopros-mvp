@@ -281,7 +281,6 @@ def run_face_analysis(video_path):
 
 # ========== Основная часть Streamlit-приложения ==========
 def main():
-    # Initialize any needed session state variables if they don't already exist
     if "demo_file_used" not in st.session_state:
         st.session_state["demo_file_used"] = False
     if "demo_video_path" not in st.session_state:
@@ -289,7 +288,7 @@ def main():
     if "uploaded_video_path" not in st.session_state:
         st.session_state["uploaded_video_path"] = None
 
-    st.title("Demo File vs Uploaded File")
+    st.title("ОТЧЕТ О ЭМОЦИОНАЛЬНОМ СОСТОЯНИИ ДОПРАШИВАЕМОГО С РАСШИФРОВКОЙ ПОКАЗАНИЙ")
 
     # Button to select the demo file
     st.markdown(
@@ -318,10 +317,28 @@ def main():
         st.session_state["uploaded_video_path"] = None
         st.success("Демо-видео готово к анализу!")
 
+    st.markdown(
+        """
+        <style>
+            /* Modify the file uploader text */
+            div[data-testid="stFileUploadDropzone"]::before {
+                content: "Пожалуйста, загрузите файл с видео допросом, нажав на кнопку 'Browse files' или перетащите файл с видео на поле ниже";
+                font-size: 14px;
+                font-weight: bold;
+                color: black;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
     # Always define `uploaded_file` first:
     uploaded_file = None
     if not st.session_state["demo_file_used"]:
-        uploaded_file = st.file_uploader("Upload your video file", type=["mp4"])
+        uploaded_file = st.file_uploader(
+            "Пожалуйста, загрузите файл с видео допросом, нажав на кнопку 'Browse files' или перетащите файл с видео на поле ниже",
+            type=["mp4"]
+        )
 
     if uploaded_file is not None:
         # If user manually uploads, turn off demo mode
