@@ -299,7 +299,8 @@ def main():
         st.success("Демо-видео готово к анализу!")
     
     # File uploader in case user does not want the demo
-    uploaded_file = st.file_uploader("Загрузить видео для анализа", type=["mp4"])
+    if not st.session_state["use_demo_file"]:
+        uploaded_file = st.file_uploader("Upload your video file", type=["mp4"])
     if uploaded_file is not None:
         # If user manually uploads, we flip off demo mode
         st.session_state["demo_file_used"] = False
@@ -323,12 +324,14 @@ def main():
                 data = src.read()
             with open(video_path, "wb") as dst:
                 dst.write(data)
+            
+        st.info("Просмотр демо-видео:")
+        st.video(video_path)
     elif st.session_state["uploaded_video_path"]:
         video_path = st.session_state["uploaded_video_path"]
 
     # Main analysis button
     if video_path is not None and st.button("ЗАПУСТИТЬ КОМПЛЕКСНЫЙ АНАЛИЗ ВЕРБАЛЬНЫХ И НЕВЕРБАЛЬНЫХ РЕАКЦИЙ"):
-        st.write(f"Запускаем анализ файла: {video_path}")
         # Создадим прогресс-бар для иллюзии поэтапной обработки
         progress_bar = st.progress(0)
 
